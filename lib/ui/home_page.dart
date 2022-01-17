@@ -32,6 +32,8 @@ class _HomePlayerState extends State<HomePlayer> {
   bool selectConfirmado = false;
   bool selectIniciado = false;
   bool selectFinalizado = false;
+  bool selectRecusada = false;
+  double heightCards = 0.0;
 
   @override
   void initState() {
@@ -45,6 +47,7 @@ class _HomePlayerState extends State<HomePlayer> {
 
   @override
   Widget build(BuildContext context) {
+    this.heightCards = MediaQuery.of(context).size.height * 0.76 - 135.0;
     Widget child;
 
     switch (_index) {
@@ -136,53 +139,55 @@ class _HomePlayerState extends State<HomePlayer> {
   }
 
   Widget meusCampos() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          height: 400.0,
-          child: StreamBuilder(
-            stream: FirebaseFirestore.instance
-                .collection("Establishment")
-                .doc(userAuth.uid)
-                .collection("campo")
-                .snapshots(),
-            builder: (BuildContext context, AsyncSnapshot snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.waiting:
-                  LinearProgressIndicator();
-                  break;
-                default:
-                  return ListView(
-                    //physics: NeverScrollableScrollPhysics(),
-                    scrollDirection: Axis.vertical,
-                    shrinkWrap: true,
-                    children:
-                        snapshot.data.docs.map<Widget>((DocumentSnapshot doc) {
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      EditCampo(campoId: doc.id)));
-                        },
-                        child: campoCard(
-                          doc.data()['nome'],
-                          doc.data()['limite_jogadores'],
-                          doc.data()['largura'],
-                          doc.data()['comprimento'],
-                          doc.data()['urlImage'],
-                        ),
-                      );
-                    }).toList(),
-                  );
-              }
-              return Text('');
-            },
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: heightCards,
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection("Establishment")
+                  .doc(userAuth.uid)
+                  .collection("campo")
+                  .snapshots(),
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.waiting:
+                    LinearProgressIndicator();
+                    break;
+                  default:
+                    return ListView(
+                      //physics: NeverScrollableScrollPhysics(),
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      children:
+                      snapshot.data.docs.map<Widget>((DocumentSnapshot doc) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditCampo(campoId: doc.id)));
+                          },
+                          child: campoCard(
+                            doc.data()['nome'],
+                            doc.data()['limite_jogadores'],
+                            doc.data()['largura'],
+                            doc.data()['comprimento'],
+                            doc.data()['urlImage'],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                }
+                return Text('');
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      )
     );
   }
 
@@ -190,6 +195,7 @@ class _HomePlayerState extends State<HomePlayer> {
     int _value = 1;
     return Expanded(
         child: SingleChildScrollView(
+
       child: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection("match")
@@ -244,6 +250,7 @@ class _HomePlayerState extends State<HomePlayer> {
                   selectConfirmado = false;
                   selectIniciado = false;
                   selectFinalizado = false;
+                  selectRecusada = false;
                 });
               },
             ),
@@ -262,6 +269,7 @@ class _HomePlayerState extends State<HomePlayer> {
                   selectConfirmado = true;
                   selectIniciado = false;
                   selectFinalizado = false;
+                  selectRecusada = false;
                 });
               },
             ),
@@ -280,6 +288,7 @@ class _HomePlayerState extends State<HomePlayer> {
                   selectConfirmado = false;
                   selectIniciado = true;
                   selectFinalizado = false;
+                  selectRecusada = false;
                 });
               },
             ),
@@ -298,10 +307,30 @@ class _HomePlayerState extends State<HomePlayer> {
                   selectConfirmado = false;
                   selectIniciado = false;
                   selectFinalizado = true;
+                  selectRecusada = false;
                 });
               },
             ),
-          )
+          ),
+          Container(
+            margin: EdgeInsets.only(left: 5.0, right: 5.0),
+            child: InputChip(
+              backgroundColor: HexColor("#8B0000"),
+              selectedColor: HexColor("#FF0000"),
+              label: Text('Recusadas'),
+              selected: selectRecusada,
+              onSelected: (bool value) {
+                statusFiltro = 'recusada';
+                setState(() {
+                  selectPendente = false;
+                  selectConfirmado = false;
+                  selectIniciado = false;
+                  selectFinalizado = false;
+                  selectRecusada = true;
+                });
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -393,7 +422,7 @@ class _HomePlayerState extends State<HomePlayer> {
                         Padding(
                           padding: EdgeInsets.only(right: 5.0),
                           child: Text(
-                            "Jogadores: (0/$lim_jogador)",
+                            "Limite de jogadores: $lim_jogador",
                             style: TextStyle(fontSize: 15.0),
                           ),
                         ),

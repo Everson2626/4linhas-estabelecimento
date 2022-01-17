@@ -178,6 +178,7 @@ class _CreateCampoState extends State<EditCampo> {
                           widget.campoId,
                           this.imageCampo
                       );
+                      Navigator.pop(context);
                     }
                 ),
               ],

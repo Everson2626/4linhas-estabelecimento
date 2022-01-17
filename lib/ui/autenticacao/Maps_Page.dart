@@ -16,6 +16,7 @@ class MapsPage extends StatefulWidget {
 class _MapsPageState extends State<MapsPage> {
   String endereco = "Selecione o local";
   Completer<GoogleMapController> _controller = Completer();
+  TextEditingController enderecoController = new TextEditingController();
   Position position;
   Marker location;
 
@@ -37,7 +38,7 @@ class _MapsPageState extends State<MapsPage> {
         GoogleMap(
           mapType: MapType.hybrid,
           markers: {if (location != null) location},
-          onLongPress: _addMarker,
+          onTap: _addMarker,
           initialCameraPosition: _kGooglePlex,
           onMapCreated: (GoogleMapController controller) {
             _controller.complete(controller);
@@ -47,17 +48,34 @@ class _MapsPageState extends State<MapsPage> {
           top: 80.0,
           right: 15.0,
           left: 15.0,
-          child: Container(
-            height: 50.0,
+          child:
+          Container(
+            height: 58.0,
             width: double.infinity,
             padding: EdgeInsets.all(8),
             child: Row(
               children: [
                 Flexible(
-                  child: Text(
-                    endereco,
-                    style: TextStyle(fontSize: 15),
-                    overflow: TextOverflow.ellipsis,
+                  child: TextField(
+                    keyboardType: TextInputType.text,
+                    controller: enderecoController,
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 15.0
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () async {
+                          var addresses = await locationFromAddress(enderecoController.text);
+                          var first = addresses.first;
+                          LatLng pos = new LatLng(first.latitude,first.longitude);
+                          _addMarker(pos);
+                        },
+                      ),
+                    ),
+
                   ),
                 ),
               ],
@@ -70,7 +88,7 @@ class _MapsPageState extends State<MapsPage> {
     ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          LocationReturn.endereco = endereco;
+          LocationReturn.endereco = this.enderecoController.text;
           LocationReturn.latitude = location.position.latitude;
           LocationReturn.longitude = location.position.longitude;
           Navigator.pop(context);
@@ -86,16 +104,17 @@ class _MapsPageState extends State<MapsPage> {
         await placemarkFromCoordinates(pos.latitude, pos.longitude);
 
     Placemark place = placemarks[0];
-
+    
     setState(() {
       location = Marker(
         markerId: const MarkerId('location'),
         infoWindow: const InfoWindow(title: 'location'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         position: pos,
       );
     });
     endereco = "${place.street}, ${place.name} - ${place.country}";
+    this.enderecoController.text = endereco;
     //print((Geolocator.distanceBetween(pos.latitude, pos.longitude, -26.926416, -48.700499)/1000).round());
   }
 }
